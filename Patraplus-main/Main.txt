@@ -1,0 +1,216 @@
+(async () => {
+    const authorName =
+        prompt("نام نویسنده برای درج بالای فایل چیست؟", "")?.trim() || "نامشخص";
+
+    /* --------------------------------------------------
+       1) استخراج تاریخ ثبت فقط از جدول search_writer
+    -------------------------------------------------- */
+    function pickRegistrationDate(anchor) {
+        const row = anchor.closest("tr");
+        if (!row) return "";
+
+        const table = row.closest("table");
+        if (!table) return "";
+
+        const rows = [...table.querySelectorAll("tr")];
+
+        // پیدا کردن ردیف هدر واقعی (اولین tr که th دارد)
+        const headerRow = rows.find(r => r.querySelectorAll("th").length > 0);
+        if (!headerRow) return "";
+
+        const headers = [...headerRow.querySelectorAll("th")]
+            .map(th => th.textContent.replace(/\s+/g, "").trim());
+
+        // پیدا کردن ستون «تاریخ ثبت»
+        const dateColIndex = headers.findIndex(h => /تاریخثبت/i.test(h));
+        if (dateColIndex === -1) return "";
+
+        const cells = [...row.querySelectorAll("td")];
+        if (!cells[dateColIndex]) return "";
+
+        return cells[dateColIndex].textContent.trim();
+    }
+
+    /* --------------------------------------------------
+       2) جمع‌آوری لینک‌ها + تاریخ ثبت (فقط یک‌بار)
+    -------------------------------------------------- */
+    if (!window._patraLinks) {
+        const anchors = [
+            ...document.querySelectorAll("a[href*='view_search_writer']")
+        ];
+
+        const collected = anchors.map(a => ({
+            url: a.href,
+            registeredAt: pickRegistrationDate(a)
+        }));
+
+        const unique = new Map();
+        for (const { url, registeredAt } of collected) {
+            if (!unique.has(url) || (!unique.get(url) && registeredAt)) {
+                unique.set(url, registeredAt || "");
+            }
+        }
+
+        window._patraLinks = [...unique.entries()].map(
+            ([url, registeredAt]) => ({ url, registeredAt })
+        );
+
+        console.log("✅ لینک‌ها جمع‌آوری شد:", window._patraLinks.length);
+    } else {
+        console.log(
+            "♻️ استفاده از لینک‌های قبلی:",
+            window._patraLinks.length
+        );
+    }
+
+    const links = window._patraLinks;
+    if (!links.length) {
+        alert("هیچ لینکی پیدا نشد.");
+        return;
+    }
+
+    /* --------------------------------------------------
+       3) جلوگیری از رکورد تکراری
+    -------------------------------------------------- */
+    const seen = window._patraSeen || (window._patraSeen = new Set());
+
+    /* --------------------------------------------------
+       4) استخراج اطلاعات صفحه view_search_writer
+    -------------------------------------------------- */
+    const concurrency = 10;
+
+    async function extract(link) {
+        const { url, registeredAt } = link;
+
+        try {
+            const res = await fetch(url, { credentials: "include" });
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, "text/html");
+
+            const labelMap = new Map();
+            const tds = [...doc.querySelectorAll("td")];
+
+            for (let i = 0; i < tds.length - 1; i++) {
+                const key = tds[i].textContent.trim();
+                if (key && !labelMap.has(key)) {
+                    labelMap.set(key, tds[i + 1].textContent.trim());
+                }
+            }
+
+            const td = label => labelMap.get(label) || "";
+
+            return {
+                نام: td("نام و نام خانوادگی"),
+                "شماره موبایل": td("شماره موبایل"),
+                "شماره تلفن": td("شماره تلفن"),
+                استان: td("استان"),
+                شهر: td("شهر"),
+                "کد ارسال": td("کد ارسال"),
+                آدرس: td("آدرس"),
+                توضیحات: td("توضیحات"),
+                "تاریخ ثبت": registeredAt || "", // فقط از سرچ
+                فروشنده: td("فروشنده")
+            };
+        } catch (err) {
+            console.error("❌ خطا:", url, err);
+            return null;
+        }
+    }
+
+    async function runWithLimit(items, worker, limit) {
+        const results = new Array(items.length);
+        let index = 0;
+
+        async function runner() {
+            while (index < items.length) {
+                const i = index++;
+                results[i] = await worker(items[i]);
+            }
+        }
+
+        await Promise.all(
+            Array.from({ length: Math.min(limit, items.length) }, runner)
+        );
+
+        return results;
+    }
+
+    const raw = await runWithLimit(links, extract, concurrency);
+    const clean = raw.filter(Boolean);
+
+    /* --------------------------------------------------
+       5) حذف تکراری‌ها (نام + موبایل)
+    -------------------------------------------------- */
+    const finalRows = [];
+    for (const r of clean) {
+        const key = (r["نام"] + r["شماره موبایل"]).replace(/\s+/g, "");
+        if (key && !seen.has(key)) {
+            seen.add(key);
+            finalRows.push(r);
+        }
+    }
+
+    if (!finalRows.length) {
+        alert("هیچ رکورد جدیدی باقی نماند.");
+        return;
+    }
+
+    /* --------------------------------------------------
+       6) خروجی Excel
+    -------------------------------------------------- */
+    const escapeXml = s =>
+        String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&apos;");
+
+    function exportToExcel(rows, filename, author) {
+        const headers = Object.keys(rows[0]);
+
+        const xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Worksheet ss:Name="Patraplus">
+<Table>
+<Row>
+<Cell ss:MergeAcross="${headers.length - 1}">
+<Data ss:Type="String">${escapeXml(author)}</Data>
+</Cell>
+</Row>
+<Row>
+${headers
+    .map(h => `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`)
+    .join("")}
+</Row>
+${rows
+    .map(
+        r => `<Row>
+${headers
+    .map(
+        h =>
+            `<Cell><Data ss:Type="String">${escapeXml(r[h] || "")}</Data></Cell>`
+    )
+    .join("")}
+</Row>`
+    )
+    .join("")}
+</Table>
+</Worksheet>
+</Workbook>`;
+
+        const blob = new Blob([xml], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        });
+
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename + ".xlsx";
+        a.click();
+    }
+
+    exportToExcel(finalRows, "patraplus_all_unique", authorName);
+    console.log("🎉 فایل اکسل دانلود شد");
+})();
