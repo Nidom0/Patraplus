@@ -1,0 +1,120 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/detailName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/patra_text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/detailMobile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/patra_text_secondary" />
+
+        <TextView
+            android:id="@+id/detailPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/patra_text_secondary" />
+
+        <TextView
+            android:id="@+id/detailLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/patra_text_secondary" />
+
+        <TextView
+            android:id="@+id/detailPostalCode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/patra_text_secondary" />
+
+        <TextView
+            android:id="@+id/detailAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/patra_text_secondary" />
+
+        <TextView
+            android:id="@+id/detailNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/patra_text_secondary" />
+
+        <TextView
+            android:id="@+id/detailRegisteredAt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/patra_text_secondary" />
+
+        <TextView
+            android:id="@+id/detailSeller"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/patra_text_secondary" />
+
+        <TextView
+            android:id="@+id/detailStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_status_badge"
+            android:textColor="@color/patra_text_primary"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonAccept"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:text="Accept"
+                android:textAllCaps="false"
+                android:backgroundTint="@color/patra_status_accepted" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonPending"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:text="Pending"
+                android:textAllCaps="false"
+                android:backgroundTint="@color/patra_status_pending" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonReject"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Reject"
+                android:textAllCaps="false"
+                android:backgroundTint="@color/patra_status_rejected" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

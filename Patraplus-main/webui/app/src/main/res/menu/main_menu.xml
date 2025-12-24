@@ -1,0 +1,6 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_show_records"
+        android:title="نمایش رکوردها"
+        android:showAsAction="ifRoom" />
+</menu>
