@@ -118,6 +118,7 @@
                     android:layout_height="0dp"
                     android:layout_weight="1"
                     android:clipToPadding="false"
+                    android:layoutAnimation="@anim/layout_fade_slide"
                     android:paddingBottom="16dp" />
 
                 <TextView
@@ -138,6 +139,8 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/patra_surface"
+        android:background="@color/patra_nav_background"
+        app:itemIconTint="@color/patra_nav_item_icon"
+        app:itemTextColor="@color/patra_nav_item_text"
         app:menu="@menu/drawer_menu" />
 </androidx.drawerlayout.widget.DrawerLayout>

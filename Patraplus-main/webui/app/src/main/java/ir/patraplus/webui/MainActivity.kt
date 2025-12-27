@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
+import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -76,6 +77,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
         setContentView(R.layout.activity_main)
 
         drawerLayout = findViewById(R.id.drawerLayout)
@@ -366,7 +371,9 @@ class MainActivity : AppCompatActivity() {
         toolbar.title = title
         recordsTitle.text = title
         val filtered = if (status == null) records else records.filter { it.status == status }
-        recordAdapter.submitList(filtered)
+        recordAdapter.submitList(filtered) {
+            recordsRecycler.scheduleLayoutAnimation()
+        }
         emptyState.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
         recordsContainer.visibility = View.VISIBLE
         webView.visibility = View.GONE
@@ -433,6 +440,10 @@ class MainActivity : AppCompatActivity() {
                 updateRecordStatus(record, RecordStatus.REJECTED)
                 dialog.dismiss()
             }
+        detailView.findViewById<com.google.android.material.button.MaterialButton>(R.id.buttonCall)
+            .setOnClickListener {
+                showCallOptions(record)
+            }
 
         dialog.show()
     }
@@ -443,6 +454,36 @@ class MainActivity : AppCompatActivity() {
         records.addAll(updated)
         showRecords(currentFilter)
         Toast.makeText(this, "وضعیت به ${status.label} منتقل شد.", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showCallOptions(record: CustomerRecord) {
+        val options = listOfNotNull(
+            record.mobile.takeIf { it.isNotBlank() }?.let { "موبایل: $it" },
+            record.phone.takeIf { it.isNotBlank() }?.let { "تلفن: $it" }
+        )
+        if (options.isEmpty()) {
+            Toast.makeText(this, "شماره تماسی ثبت نشده است.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (options.size == 1) {
+            dialNumber(options.first().substringAfter(":").trim())
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("انتخاب شماره تماس")
+            .setItems(options.toTypedArray()) { _, which ->
+                val number = options[which].substringAfter(":").trim()
+                dialNumber(number)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun dialNumber(number: String) {
+        val intent = Intent(Intent.ACTION_DIAL).apply {
+            data = Uri.parse("tel:$number")
+        }
+        startActivity(intent)
     }
 
     private fun setupFilterChips() {
