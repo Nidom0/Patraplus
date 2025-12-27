@@ -5,8 +5,15 @@
     <color name="patra_background">#F8FAFC</color>
     <color name="patra_surface">#FFFFFF</color>
     <color name="patra_surface_alt">#EEF2FF</color>
+    <color name="patra_surface_elevated">#F1F5F9</color>
     <color name="patra_text_primary">#0F172A</color>
     <color name="patra_text_secondary">#475569</color>
+    <color name="patra_chip_selected">#1D4ED8</color>
+    <color name="patra_chip_unselected">#F8FAFC</color>
+    <color name="patra_chip_text_selected">#FFFFFF</color>
+    <color name="patra_chip_text_unselected">#1E293B</color>
+    <color name="patra_chip_stroke">#CBD5F5</color>
+    <color name="patra_chip_ripple">#DDE5FF</color>
     <color name="patra_status_pending">#F59E0B</color>
     <color name="patra_status_accepted">#10B981</color>
     <color name="patra_status_rejected">#EF4444</color>
