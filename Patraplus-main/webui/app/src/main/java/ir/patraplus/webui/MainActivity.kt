@@ -422,7 +422,9 @@ class MainActivity : AppCompatActivity() {
             record.seller.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailDeliveryStatus).text =
             normalizeDeliveryStatus(record.deliveryStatus).ifBlank { "نامشخص" }
-        val notesInput = detailView.findViewById<TextInputEditText>(R.id.detailOperatorNotes)
+        val notesInput = detailView.findViewById<com.google.android.material.textfield.TextInputEditText>(
+            R.id.detailOperatorNotes
+        )
         notesInput.setText(record.operatorNotes)
         val statusView = detailView.findViewById<TextView>(R.id.detailStatus)
         statusView.text = record.status.label
