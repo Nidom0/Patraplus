@@ -70,7 +70,7 @@ class JavaScriptInjector {
         const headers = [...headerRow.querySelectorAll("th")]
             .map(th => th.textContent.replace(/\s+/g, "").trim());
 
-        const statusColIndex = headers.findIndex(h => /وضعیت/i.test(h));
+        const statusColIndex = headers.findIndex(h => /وضعیتمشتری|وضعیت/i.test(h));
         if (statusColIndex === -1) return "";
 
         const cells = [...row.querySelectorAll("td")];

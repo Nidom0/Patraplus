@@ -45,15 +45,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recordsRecycler: RecyclerView
     private lateinit var emptyState: TextView
     private lateinit var recordsTitle: TextView
-    private lateinit var filterAll: com.google.android.material.chip.Chip
-    private lateinit var filterPending: com.google.android.material.chip.Chip
-    private lateinit var filterAccepted: com.google.android.material.chip.Chip
-    private lateinit var filterRejected: com.google.android.material.chip.Chip
-    private lateinit var filterStatusSpinner: android.widget.Spinner
-    private lateinit var filterFromDate: TextInputEditText
-    private lateinit var filterToDate: TextInputEditText
-    private lateinit var filterPanel: View
-    private lateinit var filterApplyButton: MaterialButton
+    private lateinit var allStatusFilters: com.google.android.material.chip.ChipGroup
+    private lateinit var allFilterAll: com.google.android.material.chip.Chip
+    private lateinit var allFilterPending: com.google.android.material.chip.Chip
+    private lateinit var allFilterAccepted: com.google.android.material.chip.Chip
+    private lateinit var allFilterRejected: com.google.android.material.chip.Chip
     private val javaScriptInjector = JavaScriptInjector()
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var autoLoginAttempted = false
@@ -61,6 +57,7 @@ class MainActivity : AppCompatActivity() {
     private val records = mutableListOf<CustomerRecord>()
     private lateinit var recordAdapter: RecordAdapter
     private var currentFilter: RecordStatus? = null
+    private var allStatusFilter: RecordStatus? = null
 
     private val overlayPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -105,15 +102,11 @@ class MainActivity : AppCompatActivity() {
         recordsRecycler = findViewById(R.id.recordsRecycler)
         emptyState = findViewById(R.id.emptyState)
         recordsTitle = findViewById(R.id.recordsTitle)
-        filterAll = findViewById(R.id.filterAll)
-        filterPending = findViewById(R.id.filterPending)
-        filterAccepted = findViewById(R.id.filterAccepted)
-        filterRejected = findViewById(R.id.filterRejected)
-        filterStatusSpinner = findViewById(R.id.filterStatusSpinner)
-        filterFromDate = findViewById(R.id.filterFromDate)
-        filterToDate = findViewById(R.id.filterToDate)
-        filterPanel = findViewById(R.id.filterPanel)
-        filterApplyButton = findViewById(R.id.filterApplyButton)
+        allStatusFilters = findViewById(R.id.allStatusFilters)
+        allFilterAll = findViewById(R.id.allFilterAll)
+        allFilterPending = findViewById(R.id.allFilterPending)
+        allFilterAccepted = findViewById(R.id.allFilterAccepted)
+        allFilterRejected = findViewById(R.id.allFilterRejected)
 
         recordStore = RecordStore(this)
         records.addAll(recordStore.load())
@@ -126,6 +119,7 @@ class MainActivity : AppCompatActivity() {
         setupDrawer()
         webView.loadUrl("https://patraplus.ir/user")
         ensureOverlayPermission()
+        setupAllStatusFilters()
 
     }
 
@@ -383,7 +377,14 @@ class MainActivity : AppCompatActivity() {
         val title = status?.label ?: "همه مشتریان"
         toolbar.title = title
         recordsTitle.text = title
-        val filtered = if (status == null) records else records.filter { it.status == status }
+        val filtered = if (status == null) {
+            when (allStatusFilter) {
+                null -> records
+                else -> records.filter { it.status == allStatusFilter }
+            }
+        } else {
+            records.filter { it.status == status }
+        }
         recordAdapter.submitList(filtered) {
             recordsRecycler.scheduleLayoutAnimation()
         }
@@ -398,6 +399,10 @@ class MainActivity : AppCompatActivity() {
                 RecordStatus.REJECTED -> R.id.nav_rejected
             }
         )
+        allStatusFilters.visibility = if (status == null) View.VISIBLE else View.GONE
+        if (status == null) {
+            updateAllStatusSelection()
+        }
     }
 
     private fun showRecordDetail(record: CustomerRecord) {
@@ -486,6 +491,33 @@ class MainActivity : AppCompatActivity() {
         records.addAll(updated)
         showRecords(currentFilter)
         Toast.makeText(this, "توضیحات ذخیره شد.", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun setupAllStatusFilters() {
+        allFilterAll.setOnClickListener {
+            allStatusFilter = null
+            showRecords()
+        }
+        allFilterPending.setOnClickListener {
+            allStatusFilter = RecordStatus.PENDING
+            showRecords()
+        }
+        allFilterAccepted.setOnClickListener {
+            allStatusFilter = RecordStatus.ACCEPTED
+            showRecords()
+        }
+        allFilterRejected.setOnClickListener {
+            allStatusFilter = RecordStatus.REJECTED
+            showRecords()
+        }
+        updateAllStatusSelection()
+    }
+
+    private fun updateAllStatusSelection() {
+        allFilterAll.isChecked = allStatusFilter == null
+        allFilterPending.isChecked = allStatusFilter == RecordStatus.PENDING
+        allFilterAccepted.isChecked = allStatusFilter == RecordStatus.ACCEPTED
+        allFilterRejected.isChecked = allStatusFilter == RecordStatus.REJECTED
     }
 
     private fun normalizeDeliveryStatus(raw: String): String {
