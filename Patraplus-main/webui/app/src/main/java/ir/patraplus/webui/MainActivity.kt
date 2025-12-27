@@ -28,10 +28,13 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.textfield.TextInputEditText
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
+import com.google.android.material.textfield.TextInputEditText
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -42,6 +45,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recordsRecycler: RecyclerView
     private lateinit var emptyState: TextView
     private lateinit var recordsTitle: TextView
+    private lateinit var filterAll: com.google.android.material.chip.Chip
+    private lateinit var filterPending: com.google.android.material.chip.Chip
+    private lateinit var filterAccepted: com.google.android.material.chip.Chip
+    private lateinit var filterRejected: com.google.android.material.chip.Chip
+    private lateinit var filterStatusSpinner: android.widget.Spinner
+    private lateinit var filterFromDate: TextInputEditText
+    private lateinit var filterToDate: TextInputEditText
+    private lateinit var filterPanel: View
+    private lateinit var filterApplyButton: MaterialButton
     private val javaScriptInjector = JavaScriptInjector()
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var autoLoginAttempted = false
@@ -93,6 +105,15 @@ class MainActivity : AppCompatActivity() {
         recordsRecycler = findViewById(R.id.recordsRecycler)
         emptyState = findViewById(R.id.emptyState)
         recordsTitle = findViewById(R.id.recordsTitle)
+        filterAll = findViewById(R.id.filterAll)
+        filterPending = findViewById(R.id.filterPending)
+        filterAccepted = findViewById(R.id.filterAccepted)
+        filterRejected = findViewById(R.id.filterRejected)
+        filterStatusSpinner = findViewById(R.id.filterStatusSpinner)
+        filterFromDate = findViewById(R.id.filterFromDate)
+        filterToDate = findViewById(R.id.filterToDate)
+        filterPanel = findViewById(R.id.filterPanel)
+        filterApplyButton = findViewById(R.id.filterApplyButton)
 
         recordStore = RecordStore(this)
         records.addAll(recordStore.load())
