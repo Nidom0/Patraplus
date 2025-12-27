@@ -762,7 +762,6 @@ class MainActivity : AppCompatActivity() {
         val mod = ((jy - 474) % 2820) + 474
         return (((mod + 38) * 682) % 2816) < 682
     }
-    }
 
     companion object {
         const val ACTION_OVERLAY_TAP = "ir.patraplus.webui.ACTION_OVERLAY_TAP"
