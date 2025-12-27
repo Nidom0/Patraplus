@@ -46,6 +46,15 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/recordDeliveryStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="وضعیت"
+            android:textColor="@color/patra_text_secondary"
+            android:textSize="13sp" />
+
+        <TextView
             android:id="@+id/recordMobile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -14,11 +14,12 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/patra_surface"
+            android:layout_margin="12dp"
+            android:background="@drawable/bg_toolbar"
             android:elevation="6dp"
             android:padding="8dp"
             android:title="پنل اصلی"
-            android:titleTextColor="@color/patra_text_primary"
+            android:titleTextColor="@color/patra_toolbar_text"
             app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light" />
 
         <FrameLayout
@@ -111,6 +112,73 @@
                         app:rippleColor="@color/patra_chip_ripple"
                         android:textColor="@color/patra_chip_text_selector" />
                 </com.google.android.material.chip.ChipGroup>
+
+                <LinearLayout
+                    android:id="@+id/filterPanel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="فیلتر پیشرفته"
+                        android:textColor="@color/patra_text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="vertical">
+
+                        <Spinner
+                            android:id="@+id/filterStatusSpinner"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_filter_field" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            app:boxBackgroundMode="outline"
+                            app:boxCornerRadiusBottomEnd="12dp"
+                            app:boxCornerRadiusBottomStart="12dp"
+                            app:boxCornerRadiusTopEnd="12dp"
+                            app:boxCornerRadiusTopStart="12dp">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/filterFromDate"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="از تاریخ (1403/01/01)"
+                                android:inputType="text"
+                                android:textColor="@color/patra_text_primary" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            app:boxBackgroundMode="outline"
+                            app:boxCornerRadiusBottomEnd="12dp"
+                            app:boxCornerRadiusBottomStart="12dp"
+                            app:boxCornerRadiusTopEnd="12dp"
+                            app:boxCornerRadiusTopStart="12dp">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/filterToDate"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="تا تاریخ (1403/01/31)"
+                                android:inputType="text"
+                                android:textColor="@color/patra_text_primary" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+                </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recordsRecycler"
