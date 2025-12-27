@@ -40,7 +40,7 @@ class RecordAdapter(
             addressText.text = "آدرس: ${record.address}"
             dateText.text = "تاریخ ثبت: ${record.registeredAt}"
             statusText.text = record.status.label
-            deliveryStatusText.text = record.deliveryStatus.ifBlank { "نامشخص" }
+            deliveryStatusText.text = "وضعیت سفارش: ${record.deliveryStatus.ifBlank { "نامشخص" }}"
             statusText.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
                 when (record.status) {

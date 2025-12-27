@@ -122,6 +122,29 @@ class JavaScriptInjector {
 
             const td = label => labelMap.get(label) || "";
 
+            function normalizeStatus(raw = "") {
+                return raw
+                    .replace(/[ي]/g, "ی")
+                    .replace(/[ك]/g, "ک")
+                    .replace(/\s+/g, " ")
+                    .trim();
+            }
+
+            function mapStatus(rawStatus) {
+                const s = normalizeStatus(rawStatus);
+                if (!s) return "";
+                if (/در\s*انتظار.*تحویل/.test(s)) return "در انتظار تحویل";
+                if (/وصولی/.test(s)) return "وصولی";
+                if (/کنسل\s*نهایی|کنسلی/.test(s)) return "کنسل نهایی";
+                if (/انصرافی\s*هماهنگی|انصرافی/.test(s)) return "انصرافی هماهنگی";
+                return s;
+            }
+
+            const rawStatus =
+                td("وضعیت") ||
+                td("وضعیت پرونده") ||
+                td("وضعیت سفارش");
+
             return {
                 نام: td("نام و نام خانوادگی"),
                 "شماره موبایل": td("شماره موبایل"),
@@ -133,7 +156,7 @@ class JavaScriptInjector {
                 توضیحات: td("توضیحات"),
                 "تاریخ ثبت": registeredAt || "",
                 فروشنده: td("فروشنده"),
-                وضعیت: td("وضعیت")
+                وضعیت: mapStatus(rawStatus)
             };
         } catch (err) {
             return null;

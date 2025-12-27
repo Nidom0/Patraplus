@@ -148,7 +148,9 @@
                             app:boxCornerRadiusBottomEnd="12dp"
                             app:boxCornerRadiusBottomStart="12dp"
                             app:boxCornerRadiusTopEnd="12dp"
-                            app:boxCornerRadiusTopStart="12dp">
+                            app:boxCornerRadiusTopStart="12dp"
+                            app:boxStrokeColor="@color/patra_primary"
+                            app:hintTextColor="@color/patra_text_secondary">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/filterFromDate"
@@ -167,7 +169,9 @@
                             app:boxCornerRadiusBottomEnd="12dp"
                             app:boxCornerRadiusBottomStart="12dp"
                             app:boxCornerRadiusTopEnd="12dp"
-                            app:boxCornerRadiusTopStart="12dp">
+                            app:boxCornerRadiusTopStart="12dp"
+                            app:boxStrokeColor="@color/patra_primary"
+                            app:hintTextColor="@color/patra_text_secondary">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/filterToDate"
@@ -178,6 +182,15 @@
                                 android:textColor="@color/patra_text_primary" />
                         </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/filterApplyButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="اعمال فیلتر"
+                        android:textAllCaps="false"
+                        app:cornerRadius="14dp" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView

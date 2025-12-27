@@ -28,12 +28,14 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.textfield.TextInputEditText
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
@@ -53,6 +55,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var filterFromDate: TextInputEditText
     private lateinit var filterToDate: TextInputEditText
     private lateinit var filterPanel: View
+    private lateinit var filterApplyButton: MaterialButton
     private val javaScriptInjector = JavaScriptInjector()
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var autoLoginAttempted = false
@@ -112,6 +115,7 @@ class MainActivity : AppCompatActivity() {
         filterFromDate = findViewById(R.id.filterFromDate)
         filterToDate = findViewById(R.id.filterToDate)
         filterPanel = findViewById(R.id.filterPanel)
+        filterApplyButton = findViewById(R.id.filterApplyButton)
 
         recordStore = RecordStore(this)
         records.addAll(recordStore.load())
@@ -532,33 +536,15 @@ class MainActivity : AppCompatActivity() {
             options
         )
         filterStatusSpinner.adapter = adapter
-        filterStatusSpinner.onItemSelectedListener =
-            object : android.widget.AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: android.widget.AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long
-                ) {
-                    if (currentFilter == null) {
-                        showRecords()
-                    }
-                }
 
-                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
-            }
+        filterFromDate.setOnClickListener { showDatePicker(filterFromDate) }
+        filterToDate.setOnClickListener { showDatePicker(filterToDate) }
 
-        val watcher = object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
-            override fun afterTextChanged(s: android.text.Editable?) {
-                if (currentFilter == null) {
-                    showRecords()
-                }
+        filterApplyButton.setOnClickListener {
+            if (currentFilter == null) {
+                showRecords()
             }
         }
-        filterFromDate.addTextChangedListener(watcher)
-        filterToDate.addTextChangedListener(watcher)
     }
 
     private fun applyAdvancedFilters(
@@ -593,6 +579,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return null
+    }
+
+    private fun showDatePicker(target: TextInputEditText) {
+        val calendar = Calendar.getInstance()
+        val dialog = android.app.DatePickerDialog(
+            this,
+            { _, year, month, dayOfMonth ->
+                val formatted = String.format(Locale.US, "%04d/%02d/%02d", year, month + 1, dayOfMonth)
+                target.setText(formatted)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+        dialog.show()
     }
 
     companion object {
