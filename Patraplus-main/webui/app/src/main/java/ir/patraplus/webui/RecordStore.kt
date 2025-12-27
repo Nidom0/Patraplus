@@ -30,8 +30,10 @@ class RecordStore(context: Context) {
                 map[key] = record
                 added++
             } else {
-                record.status = current.status
-                map[key] = record
+                map[key] = record.copy(
+                    status = current.status,
+                    operatorNotes = current.operatorNotes
+                )
             }
         }
         val merged = map.values.toList()
@@ -69,6 +71,8 @@ class RecordStore(context: Context) {
             notes = optString("notes"),
             registeredAt = optString("registeredAt"),
             seller = optString("seller"),
+            deliveryStatus = optString("deliveryStatus"),
+            operatorNotes = optString("operatorNotes"),
             status = status
         )
     }
@@ -85,6 +89,20 @@ class RecordStore(context: Context) {
             .put("notes", notes)
             .put("registeredAt", registeredAt)
             .put("seller", seller)
+            .put("deliveryStatus", deliveryStatus)
+            .put("operatorNotes", operatorNotes)
             .put("status", status.name)
+    }
+
+    fun updateOperatorNotes(
+        records: List<CustomerRecord>,
+        recordKey: String,
+        operatorNotes: String
+    ): List<CustomerRecord> {
+        val updated = records.map { record ->
+            if (record.key() == recordKey) record.copy(operatorNotes = operatorNotes) else record
+        }
+        save(updated)
+        return updated
     }
 }

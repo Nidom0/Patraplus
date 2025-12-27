@@ -14,11 +14,12 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/patra_surface"
+            android:layout_margin="12dp"
+            android:background="@drawable/bg_toolbar"
             android:elevation="6dp"
             android:padding="8dp"
             android:title="پنل اصلی"
-            android:titleTextColor="@color/patra_text_primary"
+            android:titleTextColor="@color/patra_toolbar_text"
             app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light" />
 
         <FrameLayout
@@ -49,12 +50,76 @@
                     android:textSize="20sp"
                     android:textStyle="bold" />
 
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/allStatusFilters"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:chipSpacingHorizontal="8dp"
+                    app:chipSpacingVertical="8dp"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/allFilterAll"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="همه"
+                        app:chipBackgroundColor="@color/patra_chip_selector"
+                        app:chipStrokeColor="@color/patra_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false"
+                        app:rippleColor="@color/patra_chip_ripple"
+                        android:textColor="@color/patra_chip_text_selector" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/allFilterPending"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="در انتظار"
+                        app:chipBackgroundColor="@color/patra_chip_selector"
+                        app:chipStrokeColor="@color/patra_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false"
+                        app:rippleColor="@color/patra_chip_ripple"
+                        android:textColor="@color/patra_chip_text_selector" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/allFilterAccepted"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="تایید"
+                        app:chipBackgroundColor="@color/patra_chip_selector"
+                        app:chipStrokeColor="@color/patra_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false"
+                        app:rippleColor="@color/patra_chip_ripple"
+                        android:textColor="@color/patra_chip_text_selector" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/allFilterRejected"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="رد شده"
+                        app:chipBackgroundColor="@color/patra_chip_selector"
+                        app:chipStrokeColor="@color/patra_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false"
+                        app:rippleColor="@color/patra_chip_ripple"
+                        android:textColor="@color/patra_chip_text_selector" />
+                </com.google.android.material.chip.ChipGroup>
+
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recordsRecycler"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:layout_weight="1"
                     android:clipToPadding="false"
+                    android:layoutAnimation="@anim/layout_fade_slide"
                     android:paddingBottom="16dp" />
 
                 <TextView
@@ -75,6 +140,8 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/patra_surface"
+        android:background="@color/patra_nav_background"
+        app:itemIconTint="@color/patra_nav_item_icon"
+        app:itemTextColor="@color/patra_nav_item_text"
         app:menu="@menu/drawer_menu" />
 </androidx.drawerlayout.widget.DrawerLayout>
