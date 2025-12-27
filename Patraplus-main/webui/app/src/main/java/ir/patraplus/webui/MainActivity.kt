@@ -41,6 +41,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recordsRecycler: RecyclerView
     private lateinit var emptyState: TextView
     private lateinit var recordsTitle: TextView
+    private lateinit var filterAll: com.google.android.material.chip.Chip
+    private lateinit var filterPending: com.google.android.material.chip.Chip
+    private lateinit var filterAccepted: com.google.android.material.chip.Chip
+    private lateinit var filterRejected: com.google.android.material.chip.Chip
     private val javaScriptInjector = JavaScriptInjector()
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var autoLoginAttempted = false
@@ -80,22 +84,6 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         webView = findViewById(R.id.webView)
-        drawerLayout = findViewById(R.id.drawerLayout)
-        navigationView = findViewById(R.id.navigationView)
-        recordsLayout = findViewById(R.id.recordsLayout)
-        recordsList = findViewById(R.id.recordsList)
-        recordsEmpty = findViewById(R.id.recordsEmpty)
-
-        setSupportActionBar(findViewById(R.id.toolbar))
-        actionBarToggle = ActionBarDrawerToggle(
-            this,
-            drawerLayout,
-            findViewById(R.id.toolbar),
-            R.string.drawer_open,
-            R.string.drawer_close
-        )
-        drawerLayout.addDrawerListener(actionBarToggle)
-        actionBarToggle.syncState()
 
         WebViewHolder.setWebView(webView)
         configureWebView(webView)
@@ -104,6 +92,10 @@ class MainActivity : AppCompatActivity() {
         recordsRecycler = findViewById(R.id.recordsRecycler)
         emptyState = findViewById(R.id.emptyState)
         recordsTitle = findViewById(R.id.recordsTitle)
+        filterAll = findViewById(R.id.filterAll)
+        filterPending = findViewById(R.id.filterPending)
+        filterAccepted = findViewById(R.id.filterAccepted)
+        filterRejected = findViewById(R.id.filterRejected)
 
         recordStore = RecordStore(this)
         records.addAll(recordStore.load())
@@ -117,9 +109,7 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("https://patraplus.ir/user")
         ensureOverlayPermission()
 
-        setupDrawerNavigation()
-        loadStoredRecords()
-        updateRecordsUI()
+        setupFilterChips()
     }
 
     override fun onStart() {
@@ -349,6 +339,7 @@ class MainActivity : AppCompatActivity() {
         navigationView.setNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_web -> showWebView()
+                R.id.nav_all -> showRecords()
                 R.id.nav_pending -> showRecords(RecordStatus.PENDING)
                 R.id.nav_accepted -> showRecords(RecordStatus.ACCEPTED)
                 R.id.nav_rejected -> showRecords(RecordStatus.REJECTED)
@@ -366,17 +357,28 @@ class MainActivity : AppCompatActivity() {
         toolbar.title = "پنل اصلی"
         recordsContainer.visibility = View.GONE
         webView.visibility = View.VISIBLE
+        navigationView.setCheckedItem(R.id.nav_web)
     }
 
-    private fun showRecords(status: RecordStatus) {
+    private fun showRecords(status: RecordStatus? = null) {
         currentFilter = status
-        toolbar.title = status.label
-        recordsTitle.text = status.label
-        val filtered = records.filter { it.status == status }
+        val title = status?.label ?: "همه مشتریان"
+        toolbar.title = title
+        recordsTitle.text = title
+        val filtered = if (status == null) records else records.filter { it.status == status }
         recordAdapter.submitList(filtered)
         emptyState.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
         recordsContainer.visibility = View.VISIBLE
         webView.visibility = View.GONE
+        updateFilterSelection(status)
+        navigationView.setCheckedItem(
+            when (status) {
+                null -> R.id.nav_all
+                RecordStatus.PENDING -> R.id.nav_pending
+                RecordStatus.ACCEPTED -> R.id.nav_accepted
+                RecordStatus.REJECTED -> R.id.nav_rejected
+            }
+        )
     }
 
     private fun showRecordDetail(record: CustomerRecord) {
@@ -384,21 +386,21 @@ class MainActivity : AppCompatActivity() {
         detailView.findViewById<TextView>(R.id.detailName).text =
             record.name.ifBlank { "بدون نام" }
         detailView.findViewById<TextView>(R.id.detailMobile).text =
-            "شماره موبایل: ${record.mobile}"
+            record.mobile.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailPhone).text =
-            "شماره تلفن: ${record.phone}"
+            record.phone.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailLocation).text =
-            "استان/شهر: ${record.province} - ${record.city}"
+            "${record.province.ifBlank { "نامشخص" }} - ${record.city.ifBlank { "نامشخص" }}"
         detailView.findViewById<TextView>(R.id.detailPostalCode).text =
-            "کد ارسال: ${record.postalCode}"
+            record.postalCode.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailAddress).text =
-            "آدرس: ${record.address}"
+            record.address.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailNotes).text =
-            "توضیحات: ${record.notes}"
+            record.notes.ifBlank { "ندارد" }
         detailView.findViewById<TextView>(R.id.detailRegisteredAt).text =
-            "تاریخ ثبت: ${record.registeredAt}"
+            record.registeredAt.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailSeller).text =
-            "فروشنده: ${record.seller}"
+            record.seller.ifBlank { "نامشخص" }
         val statusView = detailView.findViewById<TextView>(R.id.detailStatus)
         statusView.text = record.status.label
         statusView.backgroundTintList = ContextCompat.getColorStateList(
@@ -439,10 +441,23 @@ class MainActivity : AppCompatActivity() {
         val updated = recordStore.updateStatus(records, record.key(), status)
         records.clear()
         records.addAll(updated)
-        if (currentFilter != null) {
-            showRecords(currentFilter!!)
-        }
+        showRecords(currentFilter)
         Toast.makeText(this, "وضعیت به ${status.label} منتقل شد.", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun setupFilterChips() {
+        filterAll.setOnClickListener { showRecords() }
+        filterPending.setOnClickListener { showRecords(RecordStatus.PENDING) }
+        filterAccepted.setOnClickListener { showRecords(RecordStatus.ACCEPTED) }
+        filterRejected.setOnClickListener { showRecords(RecordStatus.REJECTED) }
+        updateFilterSelection(currentFilter)
+    }
+
+    private fun updateFilterSelection(status: RecordStatus?) {
+        filterAll.isChecked = status == null
+        filterPending.isChecked = status == RecordStatus.PENDING
+        filterAccepted.isChecked = status == RecordStatus.ACCEPTED
+        filterRejected.isChecked = status == RecordStatus.REJECTED
     }
 
     companion object {
