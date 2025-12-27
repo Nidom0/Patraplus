@@ -69,6 +69,7 @@ class RecordStore(context: Context) {
             notes = optString("notes"),
             registeredAt = optString("registeredAt"),
             seller = optString("seller"),
+            deliveryStatus = optString("deliveryStatus"),
             status = status
         )
     }
@@ -85,6 +86,7 @@ class RecordStore(context: Context) {
             .put("notes", notes)
             .put("registeredAt", registeredAt)
             .put("seller", seller)
+            .put("deliveryStatus", deliveryStatus)
             .put("status", status.name)
     }
 }

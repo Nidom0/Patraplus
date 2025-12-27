@@ -132,7 +132,8 @@ class JavaScriptInjector {
                 آدرس: td("آدرس"),
                 توضیحات: td("توضیحات"),
                 "تاریخ ثبت": registeredAt || "",
-                فروشنده: td("فروشنده")
+                فروشنده: td("فروشنده"),
+                وضعیت: td("وضعیت")
             };
         } catch (err) {
             return null;

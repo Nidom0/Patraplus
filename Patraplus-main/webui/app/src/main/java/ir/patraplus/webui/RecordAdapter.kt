@@ -32,6 +32,7 @@ class RecordAdapter(
         private val addressText: TextView = itemView.findViewById(R.id.recordAddress)
         private val dateText: TextView = itemView.findViewById(R.id.recordDate)
         private val statusText: TextView = itemView.findViewById(R.id.recordStatus)
+        private val deliveryStatusText: TextView = itemView.findViewById(R.id.recordDeliveryStatus)
 
         fun bind(record: CustomerRecord) {
             nameText.text = record.name.ifBlank { "بدون نام" }
@@ -39,6 +40,7 @@ class RecordAdapter(
             addressText.text = "آدرس: ${record.address}"
             dateText.text = "تاریخ ثبت: ${record.registeredAt}"
             statusText.text = record.status.label
+            deliveryStatusText.text = record.deliveryStatus.ifBlank { "نامشخص" }
             statusText.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
                 when (record.status) {

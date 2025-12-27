@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
+import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -28,9 +29,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.textfield.TextInputEditText
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -41,6 +45,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recordsRecycler: RecyclerView
     private lateinit var emptyState: TextView
     private lateinit var recordsTitle: TextView
+    private lateinit var filterAll: com.google.android.material.chip.Chip
+    private lateinit var filterPending: com.google.android.material.chip.Chip
+    private lateinit var filterAccepted: com.google.android.material.chip.Chip
+    private lateinit var filterRejected: com.google.android.material.chip.Chip
+    private lateinit var filterStatusSpinner: android.widget.Spinner
+    private lateinit var filterFromDate: TextInputEditText
+    private lateinit var filterToDate: TextInputEditText
+    private lateinit var filterPanel: View
     private val javaScriptInjector = JavaScriptInjector()
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var autoLoginAttempted = false
@@ -72,6 +84,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
         setContentView(R.layout.activity_main)
 
         drawerLayout = findViewById(R.id.drawerLayout)
@@ -80,22 +96,6 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         webView = findViewById(R.id.webView)
-        drawerLayout = findViewById(R.id.drawerLayout)
-        navigationView = findViewById(R.id.navigationView)
-        recordsLayout = findViewById(R.id.recordsLayout)
-        recordsList = findViewById(R.id.recordsList)
-        recordsEmpty = findViewById(R.id.recordsEmpty)
-
-        setSupportActionBar(findViewById(R.id.toolbar))
-        actionBarToggle = ActionBarDrawerToggle(
-            this,
-            drawerLayout,
-            findViewById(R.id.toolbar),
-            R.string.drawer_open,
-            R.string.drawer_close
-        )
-        drawerLayout.addDrawerListener(actionBarToggle)
-        actionBarToggle.syncState()
 
         WebViewHolder.setWebView(webView)
         configureWebView(webView)
@@ -104,6 +104,14 @@ class MainActivity : AppCompatActivity() {
         recordsRecycler = findViewById(R.id.recordsRecycler)
         emptyState = findViewById(R.id.emptyState)
         recordsTitle = findViewById(R.id.recordsTitle)
+        filterAll = findViewById(R.id.filterAll)
+        filterPending = findViewById(R.id.filterPending)
+        filterAccepted = findViewById(R.id.filterAccepted)
+        filterRejected = findViewById(R.id.filterRejected)
+        filterStatusSpinner = findViewById(R.id.filterStatusSpinner)
+        filterFromDate = findViewById(R.id.filterFromDate)
+        filterToDate = findViewById(R.id.filterToDate)
+        filterPanel = findViewById(R.id.filterPanel)
 
         recordStore = RecordStore(this)
         records.addAll(recordStore.load())
@@ -117,9 +125,8 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("https://patraplus.ir/user")
         ensureOverlayPermission()
 
-        setupDrawerNavigation()
-        loadStoredRecords()
-        updateRecordsUI()
+        setupFilterChips()
+        setupAdvancedFilters()
     }
 
     override fun onStart() {
@@ -307,7 +314,8 @@ class MainActivity : AppCompatActivity() {
                     address = obj.optString("آدرس"),
                     notes = obj.optString("توضیحات"),
                     registeredAt = obj.optString("تاریخ ثبت"),
-                    seller = obj.optString("فروشنده")
+                    seller = obj.optString("فروشنده"),
+                    deliveryStatus = obj.optString("وضعیت")
                 )
             )
         }
@@ -349,6 +357,7 @@ class MainActivity : AppCompatActivity() {
         navigationView.setNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_web -> showWebView()
+                R.id.nav_all -> showRecords()
                 R.id.nav_pending -> showRecords(RecordStatus.PENDING)
                 R.id.nav_accepted -> showRecords(RecordStatus.ACCEPTED)
                 R.id.nav_rejected -> showRecords(RecordStatus.REJECTED)
@@ -366,17 +375,32 @@ class MainActivity : AppCompatActivity() {
         toolbar.title = "پنل اصلی"
         recordsContainer.visibility = View.GONE
         webView.visibility = View.VISIBLE
+        navigationView.setCheckedItem(R.id.nav_web)
     }
 
-    private fun showRecords(status: RecordStatus) {
+    private fun showRecords(status: RecordStatus? = null) {
         currentFilter = status
-        toolbar.title = status.label
-        recordsTitle.text = status.label
-        val filtered = records.filter { it.status == status }
-        recordAdapter.submitList(filtered)
-        emptyState.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+        val title = status?.label ?: "همه مشتریان"
+        toolbar.title = title
+        recordsTitle.text = title
+        val filtered = if (status == null) records else records.filter { it.status == status }
+        val finalList = applyAdvancedFilters(filtered, status)
+        recordAdapter.submitList(finalList) {
+            recordsRecycler.scheduleLayoutAnimation()
+        }
+        emptyState.visibility = if (finalList.isEmpty()) View.VISIBLE else View.GONE
         recordsContainer.visibility = View.VISIBLE
         webView.visibility = View.GONE
+        updateFilterSelection(status)
+        navigationView.setCheckedItem(
+            when (status) {
+                null -> R.id.nav_all
+                RecordStatus.PENDING -> R.id.nav_pending
+                RecordStatus.ACCEPTED -> R.id.nav_accepted
+                RecordStatus.REJECTED -> R.id.nav_rejected
+            }
+        )
+        filterPanel.visibility = if (status == null) View.VISIBLE else View.GONE
     }
 
     private fun showRecordDetail(record: CustomerRecord) {
@@ -384,21 +408,23 @@ class MainActivity : AppCompatActivity() {
         detailView.findViewById<TextView>(R.id.detailName).text =
             record.name.ifBlank { "بدون نام" }
         detailView.findViewById<TextView>(R.id.detailMobile).text =
-            "شماره موبایل: ${record.mobile}"
+            record.mobile.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailPhone).text =
-            "شماره تلفن: ${record.phone}"
+            record.phone.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailLocation).text =
-            "استان/شهر: ${record.province} - ${record.city}"
+            "${record.province.ifBlank { "نامشخص" }} - ${record.city.ifBlank { "نامشخص" }}"
         detailView.findViewById<TextView>(R.id.detailPostalCode).text =
-            "کد ارسال: ${record.postalCode}"
+            record.postalCode.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailAddress).text =
-            "آدرس: ${record.address}"
+            record.address.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailNotes).text =
-            "توضیحات: ${record.notes}"
+            record.notes.ifBlank { "ندارد" }
         detailView.findViewById<TextView>(R.id.detailRegisteredAt).text =
-            "تاریخ ثبت: ${record.registeredAt}"
+            record.registeredAt.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailSeller).text =
-            "فروشنده: ${record.seller}"
+            record.seller.ifBlank { "نامشخص" }
+        detailView.findViewById<TextView>(R.id.detailDeliveryStatus).text =
+            record.deliveryStatus.ifBlank { "نامشخص" }
         val statusView = detailView.findViewById<TextView>(R.id.detailStatus)
         statusView.text = record.status.label
         statusView.backgroundTintList = ContextCompat.getColorStateList(
@@ -431,6 +457,10 @@ class MainActivity : AppCompatActivity() {
                 updateRecordStatus(record, RecordStatus.REJECTED)
                 dialog.dismiss()
             }
+        detailView.findViewById<com.google.android.material.button.MaterialButton>(R.id.buttonCall)
+            .setOnClickListener {
+                showCallOptions(record)
+            }
 
         dialog.show()
     }
@@ -439,10 +469,130 @@ class MainActivity : AppCompatActivity() {
         val updated = recordStore.updateStatus(records, record.key(), status)
         records.clear()
         records.addAll(updated)
-        if (currentFilter != null) {
-            showRecords(currentFilter!!)
-        }
+        showRecords(currentFilter)
         Toast.makeText(this, "وضعیت به ${status.label} منتقل شد.", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showCallOptions(record: CustomerRecord) {
+        val options = listOfNotNull(
+            record.mobile.takeIf { it.isNotBlank() }?.let { "موبایل: $it" },
+            record.phone.takeIf { it.isNotBlank() }?.let { "تلفن: $it" }
+        )
+        if (options.isEmpty()) {
+            Toast.makeText(this, "شماره تماسی ثبت نشده است.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (options.size == 1) {
+            dialNumber(options.first().substringAfter(":").trim())
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("انتخاب شماره تماس")
+            .setItems(options.toTypedArray()) { _, which ->
+                val number = options[which].substringAfter(":").trim()
+                dialNumber(number)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun dialNumber(number: String) {
+        val intent = Intent(Intent.ACTION_DIAL).apply {
+            data = Uri.parse("tel:$number")
+        }
+        startActivity(intent)
+    }
+
+    private fun setupFilterChips() {
+        filterAll.setOnClickListener { showRecords() }
+        filterPending.setOnClickListener { showRecords(RecordStatus.PENDING) }
+        filterAccepted.setOnClickListener { showRecords(RecordStatus.ACCEPTED) }
+        filterRejected.setOnClickListener { showRecords(RecordStatus.REJECTED) }
+        updateFilterSelection(currentFilter)
+    }
+
+    private fun updateFilterSelection(status: RecordStatus?) {
+        filterAll.isChecked = status == null
+        filterPending.isChecked = status == RecordStatus.PENDING
+        filterAccepted.isChecked = status == RecordStatus.ACCEPTED
+        filterRejected.isChecked = status == RecordStatus.REJECTED
+    }
+
+    private fun setupAdvancedFilters() {
+        val options = listOf(
+            "همه وضعیت‌ها",
+            "وصولی",
+            "کنسل نهایی",
+            "در انتظار تحویل",
+            "انصرافی هماهنگی"
+        )
+        val adapter = android.widget.ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_dropdown_item,
+            options
+        )
+        filterStatusSpinner.adapter = adapter
+        filterStatusSpinner.onItemSelectedListener =
+            object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: android.widget.AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                    if (currentFilter == null) {
+                        showRecords()
+                    }
+                }
+
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
+            }
+
+        val watcher = object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: android.text.Editable?) {
+                if (currentFilter == null) {
+                    showRecords()
+                }
+            }
+        }
+        filterFromDate.addTextChangedListener(watcher)
+        filterToDate.addTextChangedListener(watcher)
+    }
+
+    private fun applyAdvancedFilters(
+        source: List<CustomerRecord>,
+        status: RecordStatus?
+    ): List<CustomerRecord> {
+        if (status != null) return source
+
+        val selectedStatus = filterStatusSpinner.selectedItem?.toString()?.trim().orEmpty()
+        val fromDate = parseDate(filterFromDate.text?.toString())
+        val toDate = parseDate(filterToDate.text?.toString())
+
+        return source.filter { record ->
+            val matchesDelivery = selectedStatus == "همه وضعیت‌ها" ||
+                record.deliveryStatus.trim() == selectedStatus
+            val recordDate = parseDate(record.registeredAt)
+            val matchesFrom = fromDate == null || (recordDate != null && !recordDate.before(fromDate))
+            val matchesTo = toDate == null || (recordDate != null && !recordDate.after(toDate))
+            matchesDelivery && matchesFrom && matchesTo
+        }
+    }
+
+    private fun parseDate(value: String?): java.util.Date? {
+        val text = value?.trim().orEmpty()
+        if (text.isBlank()) return null
+        val patterns = listOf("yyyy/MM/dd", "yyyy-M-d", "yyyy/MM/d", "yyyy-MM-dd")
+        for (pattern in patterns) {
+            runCatching {
+                val formatter = SimpleDateFormat(pattern, Locale.US)
+                formatter.isLenient = false
+                return formatter.parse(text)
+            }
+        }
+        return null
     }
 
     companion object {
