@@ -1,15 +1,15 @@
 <resources>
-    <color name="patra_primary">#1D4ED8</color>
-    <color name="patra_primary_dark">#1E3A8A</color>
-    <color name="patra_secondary">#F59E0B</color>
-    <color name="patra_background">#F8FAFC</color>
+    <color name="patra_primary">#2563EB</color>
+    <color name="patra_primary_dark">#1E40AF</color>
+    <color name="patra_secondary">#F97316</color>
+    <color name="patra_background">#EEF2F7</color>
     <color name="patra_surface">#FFFFFF</color>
-    <color name="patra_surface_alt">#EEF2FF</color>
-    <color name="patra_surface_elevated">#F1F5F9</color>
-    <color name="patra_text_primary">#0F172A</color>
-    <color name="patra_text_secondary">#475569</color>
-    <color name="patra_toolbar_bg">#111827</color>
-    <color name="patra_toolbar_text">#F9FAFB</color>
+    <color name="patra_surface_alt">#E0E7FF</color>
+    <color name="patra_surface_elevated">#F8FAFC</color>
+    <color name="patra_text_primary">#111827</color>
+    <color name="patra_text_secondary">#4B5563</color>
+    <color name="patra_toolbar_bg">#0B1324</color>
+    <color name="patra_toolbar_text">#F8FAFC</color>
     <color name="patra_nav_background">#0B1220</color>
     <color name="patra_nav_text">#E2E8F0</color>
     <color name="patra_nav_text_selected">#FFFFFF</color>

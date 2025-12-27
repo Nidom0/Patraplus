@@ -428,7 +428,7 @@ class MainActivity : AppCompatActivity() {
         detailView.findViewById<TextView>(R.id.detailSeller).text =
             record.seller.ifBlank { "نامشخص" }
         detailView.findViewById<TextView>(R.id.detailDeliveryStatus).text =
-            record.deliveryStatus.ifBlank { "نامشخص" }
+            normalizeDeliveryStatus(record.deliveryStatus).ifBlank { "نامشخص" }
         val statusView = detailView.findViewById<TextView>(R.id.detailStatus)
         statusView.text = record.status.label
         statusView.backgroundTintList = ContextCompat.getColorStateList(
@@ -537,8 +537,8 @@ class MainActivity : AppCompatActivity() {
         )
         filterStatusSpinner.adapter = adapter
 
-        filterFromDate.setOnClickListener { showDatePicker(filterFromDate) }
-        filterToDate.setOnClickListener { showDatePicker(filterToDate) }
+        filterFromDate.setOnClickListener { showPersianDatePicker(filterFromDate) }
+        filterToDate.setOnClickListener { showPersianDatePicker(filterToDate) }
 
         filterApplyButton.setOnClickListener {
             if (currentFilter == null) {
@@ -559,7 +559,7 @@ class MainActivity : AppCompatActivity() {
 
         return source.filter { record ->
             val matchesDelivery = selectedStatus == "همه وضعیت‌ها" ||
-                record.deliveryStatus.trim() == selectedStatus
+                normalizeDeliveryStatus(record.deliveryStatus) == selectedStatus
             val recordDate = parseDate(record.registeredAt)
             val matchesFrom = fromDate == null || (recordDate != null && !recordDate.before(fromDate))
             val matchesTo = toDate == null || (recordDate != null && !recordDate.after(toDate))
@@ -570,30 +570,198 @@ class MainActivity : AppCompatActivity() {
     private fun parseDate(value: String?): java.util.Date? {
         val text = value?.trim().orEmpty()
         if (text.isBlank()) return null
-        val patterns = listOf("yyyy/MM/dd", "yyyy-M-d", "yyyy/MM/d", "yyyy-MM-dd")
-        for (pattern in patterns) {
-            runCatching {
-                val formatter = SimpleDateFormat(pattern, Locale.US)
-                formatter.isLenient = false
-                return formatter.parse(text)
-            }
+        val parts = text.split("-", "/")
+        if (parts.size < 3) return null
+        val year = parts[0].toIntOrNull() ?: return null
+        val month = parts[1].toIntOrNull() ?: return null
+        val day = parts[2].toIntOrNull() ?: return null
+
+        val gregorian = if (year > 1900) {
+            Triple(year, month, day)
+        } else {
+            jalaliToGregorian(year, month, day)
         }
-        return null
+
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        formatter.isLenient = false
+        return runCatching {
+            formatter.parse(String.format(Locale.US, "%04d-%02d-%02d", gregorian.first, gregorian.second, gregorian.third))
+        }.getOrNull()
     }
 
-    private fun showDatePicker(target: TextInputEditText) {
-        val calendar = Calendar.getInstance()
-        val dialog = android.app.DatePickerDialog(
-            this,
-            { _, year, month, dayOfMonth ->
-                val formatted = String.format(Locale.US, "%04d/%02d/%02d", year, month + 1, dayOfMonth)
-                target.setText(formatted)
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
+    private fun normalizeDeliveryStatus(raw: String): String {
+        val normalized = raw
+            .replace("ي", "ی")
+            .replace("ك", "ک")
+            .replace("\\s+".toRegex(), " ")
+            .trim()
+        return when {
+            normalized.contains("در انتظار") && normalized.contains("تحویل") -> "در انتظار تحویل"
+            normalized.contains("وصولی") -> "وصولی"
+            normalized.contains("کنسل") || normalized.contains("کنسلی") -> "کنسل نهایی"
+            normalized.contains("انصرافی") -> "انصرافی هماهنگی"
+            else -> normalized
+        }
+    }
+
+    private fun showPersianDatePicker(target: TextInputEditText) {
+        val today = Calendar.getInstance()
+        val jalaliToday = gregorianToJalali(
+            today.get(Calendar.YEAR),
+            today.get(Calendar.MONTH) + 1,
+            today.get(Calendar.DAY_OF_MONTH)
         )
-        dialog.show()
+
+        val view = layoutInflater.inflate(R.layout.dialog_persian_date_picker, null)
+        val yearPicker = view.findViewById<android.widget.NumberPicker>(R.id.pickerYear)
+        val monthPicker = view.findViewById<android.widget.NumberPicker>(R.id.pickerMonth)
+        val dayPicker = view.findViewById<android.widget.NumberPicker>(R.id.pickerDay)
+
+        yearPicker.minValue = 1390
+        yearPicker.maxValue = 1500
+        yearPicker.value = jalaliToday.jy
+
+        monthPicker.minValue = 1
+        monthPicker.maxValue = 12
+        monthPicker.value = jalaliToday.jm
+
+        fun updateDayPicker() {
+            dayPicker.minValue = 1
+            dayPicker.maxValue = daysInJalaliMonth(yearPicker.value, monthPicker.value)
+            if (dayPicker.value > dayPicker.maxValue) {
+                dayPicker.value = dayPicker.maxValue
+            }
+        }
+
+        dayPicker.value = jalaliToday.jd
+        updateDayPicker()
+
+        monthPicker.setOnValueChangedListener { _, _, _ -> updateDayPicker() }
+        yearPicker.setOnValueChangedListener { _, _, _ -> updateDayPicker() }
+
+        AlertDialog.Builder(this)
+            .setTitle("انتخاب تاریخ")
+            .setView(view)
+            .setPositiveButton("ثبت") { _, _ ->
+                val formatted = String.format(
+                    Locale.US,
+                    "%04d/%02d/%02d",
+                    yearPicker.value,
+                    monthPicker.value,
+                    dayPicker.value
+                )
+                target.setText(formatted)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private data class JalaliDate(val jy: Int, val jm: Int, val jd: Int)
+
+    private fun gregorianToJalali(gy: Int, gm: Int, gd: Int): JalaliDate {
+        val gDays = intArrayOf(0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334)
+        var gy2 = gy - 1600
+        var gm2 = gm - 1
+        var gd2 = gd - 1
+        var gDayNo = 365 * gy2 + (gy2 + 3) / 4 - (gy2 + 99) / 100 + (gy2 + 399) / 400
+        gDayNo += gDays[gm2] + gd2
+        if (gm2 > 1 && isGregorianLeap(gy)) {
+            gDayNo++
+        }
+        var jDayNo = gDayNo - 79
+        val jNp = jDayNo / 12053
+        jDayNo %= 12053
+        var jy = 979 + 33 * jNp + 4 * (jDayNo / 1461)
+        jDayNo %= 1461
+        if (jDayNo >= 366) {
+            jy += (jDayNo - 1) / 365
+            jDayNo = (jDayNo - 1) % 365
+        }
+        val jm: Int
+        val jd: Int
+        if (jDayNo < 186) {
+            jm = 1 + jDayNo / 31
+            jd = 1 + jDayNo % 31
+        } else {
+            jm = 7 + (jDayNo - 186) / 30
+            jd = 1 + (jDayNo - 186) % 30
+        }
+        return JalaliDate(jy, jm, jd)
+    }
+
+    private fun jalaliToGregorian(jy: Int, jm: Int, jd: Int): Triple<Int, Int, Int> {
+        var jy2 = jy - 979
+        var jm2 = jm - 1
+        var jd2 = jd - 1
+        var jDayNo = 365 * jy2 + jy2 / 33 * 8 + (jy2 % 33 + 3) / 4
+        jDayNo += if (jm2 < 6) jm2 * 31 else jm2 * 30 + 6 * 31 - 6 * 30
+        jDayNo += jd2
+        var gDayNo = jDayNo + 79
+        var gy = 1600 + 400 * (gDayNo / 146097)
+        gDayNo %= 146097
+        var leap = true
+        if (gDayNo >= 36525) {
+            gDayNo--
+            gy += 100 * (gDayNo / 36524)
+            gDayNo %= 36524
+            if (gDayNo >= 365) {
+                gDayNo++
+            } else {
+                leap = false
+            }
+        }
+        gy += 4 * (gDayNo / 1461)
+        gDayNo %= 1461
+        if (gDayNo >= 366) {
+            leap = false
+            gDayNo--
+            gy += gDayNo / 365
+            gDayNo %= 365
+        }
+        val gd = gDayNo + 1
+        val salA = intArrayOf(
+            0,
+            31,
+            if (leap) 29 else 28,
+            31,
+            30,
+            31,
+            30,
+            31,
+            31,
+            30,
+            31,
+            30,
+            31
+        )
+        var gm = 0
+        var day = gd
+        for (i in 1..12) {
+            if (day <= salA[i]) {
+                gm = i
+                break
+            }
+            day -= salA[i]
+        }
+        return Triple(gy, gm, day)
+    }
+
+    private fun isGregorianLeap(year: Int): Boolean {
+        return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
+    }
+
+    private fun daysInJalaliMonth(jy: Int, jm: Int): Int {
+        return when {
+            jm <= 6 -> 31
+            jm <= 11 -> 30
+            else -> if (isJalaliLeap(jy)) 30 else 29
+        }
+    }
+
+    private fun isJalaliLeap(jy: Int): Boolean {
+        val mod = ((jy - 474) % 2820) + 474
+        return (((mod + 38) * 682) % 2816) < 682
+    }
     }
 
     companion object {

@@ -56,6 +56,29 @@ class JavaScriptInjector {
         return cells[dateColIndex].textContent.trim();
     }
 
+    function pickStatus(anchor) {
+        const row = anchor.closest("tr");
+        if (!row) return "";
+
+        const table = row.closest("table");
+        if (!table) return "";
+
+        const rows = [...table.querySelectorAll("tr")];
+        const headerRow = rows.find(r => r.querySelectorAll("th").length > 0);
+        if (!headerRow) return "";
+
+        const headers = [...headerRow.querySelectorAll("th")]
+            .map(th => th.textContent.replace(/\s+/g, "").trim());
+
+        const statusColIndex = headers.findIndex(h => /وضعیت/i.test(h));
+        if (statusColIndex === -1) return "";
+
+        const cells = [...row.querySelectorAll("td")];
+        if (!cells[statusColIndex]) return "";
+
+        return cells[statusColIndex].textContent.trim();
+    }
+
     /* --------------------------------------------------
        2) جمع‌آوری لینک‌ها + تاریخ ثبت (فقط یک‌بار)
     -------------------------------------------------- */
@@ -66,18 +89,25 @@ class JavaScriptInjector {
 
         const collected = anchors.map(a => ({
             url: a.href,
-            registeredAt: pickRegistrationDate(a)
+            registeredAt: pickRegistrationDate(a),
+            status: pickStatus(a)
         }));
 
         const unique = new Map();
-        for (const { url, registeredAt } of collected) {
-            if (!unique.has(url) || (!unique.get(url) && registeredAt)) {
-                unique.set(url, registeredAt || "");
+        for (const { url, registeredAt, status } of collected) {
+            if (!unique.has(url)) {
+                unique.set(url, { registeredAt: registeredAt || "", status: status || "" });
+            } else {
+                const current = unique.get(url);
+                unique.set(url, {
+                    registeredAt: current.registeredAt || registeredAt || "",
+                    status: current.status || status || ""
+                });
             }
         }
 
         window._patraLinks = [...unique.entries()].map(
-            ([url, registeredAt]) => ({ url, registeredAt })
+            ([url, payload]) => ({ url, registeredAt: payload.registeredAt, status: payload.status })
         );
     }
 
@@ -95,7 +125,7 @@ class JavaScriptInjector {
        4) استخراج اطلاعات صفحه view_search_writer
     -------------------------------------------------- */
     function extract(link) {
-        const { url, registeredAt } = link;
+        const { url, registeredAt, status: listStatus } = link;
 
         try {
             const request = new XMLHttpRequest();
@@ -145,6 +175,8 @@ class JavaScriptInjector {
                 td("وضعیت پرونده") ||
                 td("وضعیت سفارش");
 
+            const finalStatus = mapStatus(rawStatus || listStatus) || normalizeStatus(listStatus);
+
             return {
                 نام: td("نام و نام خانوادگی"),
                 "شماره موبایل": td("شماره موبایل"),
@@ -156,7 +188,7 @@ class JavaScriptInjector {
                 توضیحات: td("توضیحات"),
                 "تاریخ ثبت": registeredAt || "",
                 فروشنده: td("فروشنده"),
-                وضعیت: mapStatus(rawStatus)
+                وضعیت: finalStatus
             };
         } catch (err) {
             return null;
