@@ -18,6 +18,7 @@ data class CustomerRecord(
     val registeredAt: String,
     val seller: String,
     val deliveryStatus: String,
+    val operatorNotes: String = "",
     var status: RecordStatus = RecordStatus.PENDING
 ) {
     fun key(): String = (name + mobile).replace("\\s+".toRegex(), "")
