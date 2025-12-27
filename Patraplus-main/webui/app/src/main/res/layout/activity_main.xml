@@ -70,7 +70,7 @@
                         app:chipStrokeWidth="1dp"
                         app:checkedIconVisible="false"
                         app:rippleColor="@color/patra_chip_ripple"
-                        app:textColor="@color/patra_chip_text_selector" />
+                        android:textColor="@color/patra_chip_text_selector" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/filterPending"
@@ -83,7 +83,7 @@
                         app:chipStrokeWidth="1dp"
                         app:checkedIconVisible="false"
                         app:rippleColor="@color/patra_chip_ripple"
-                        app:textColor="@color/patra_chip_text_selector" />
+                        android:textColor="@color/patra_chip_text_selector" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/filterAccepted"
@@ -96,7 +96,7 @@
                         app:chipStrokeWidth="1dp"
                         app:checkedIconVisible="false"
                         app:rippleColor="@color/patra_chip_ripple"
-                        app:textColor="@color/patra_chip_text_selector" />
+                        android:textColor="@color/patra_chip_text_selector" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/filterRejected"
@@ -109,7 +109,7 @@
                         app:chipStrokeWidth="1dp"
                         app:checkedIconVisible="false"
                         app:rippleColor="@color/patra_chip_ripple"
-                        app:textColor="@color/patra_chip_text_selector" />
+                        android:textColor="@color/patra_chip_text_selector" />
                 </com.google.android.material.chip.ChipGroup>
 
                 <androidx.recyclerview.widget.RecyclerView
