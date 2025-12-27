@@ -49,6 +49,69 @@
                     android:textSize="20sp"
                     android:textStyle="bold" />
 
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/recordsFilters"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:chipSpacingHorizontal="8dp"
+                    app:chipSpacingVertical="8dp"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/filterAll"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="همه"
+                        app:chipBackgroundColor="@color/patra_chip_selector"
+                        app:chipStrokeColor="@color/patra_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false"
+                        app:rippleColor="@color/patra_chip_ripple"
+                        app:textColor="@color/patra_chip_text_selector" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/filterPending"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="در انتظار"
+                        app:chipBackgroundColor="@color/patra_chip_selector"
+                        app:chipStrokeColor="@color/patra_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false"
+                        app:rippleColor="@color/patra_chip_ripple"
+                        app:textColor="@color/patra_chip_text_selector" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/filterAccepted"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="تایید"
+                        app:chipBackgroundColor="@color/patra_chip_selector"
+                        app:chipStrokeColor="@color/patra_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false"
+                        app:rippleColor="@color/patra_chip_ripple"
+                        app:textColor="@color/patra_chip_text_selector" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/filterRejected"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="رد شده"
+                        app:chipBackgroundColor="@color/patra_chip_selector"
+                        app:chipStrokeColor="@color/patra_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false"
+                        app:rippleColor="@color/patra_chip_ripple"
+                        app:textColor="@color/patra_chip_text_selector" />
+                </com.google.android.material.chip.ChipGroup>
+
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recordsRecycler"
                     android:layout_width="match_parent"
